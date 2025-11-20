@@ -57,7 +57,8 @@
 
         <!-- Input Control Panel -->
         <div class="bg-card p-6 rounded-xl shadow-2xl mb-10 border border-primary/50">
-            <h2 class="text-xl font-bold mb-4 text-text-light">1. Define the Base Time</h2>
+            <!-- Removed "1." from the heading below -->
+            <h2 class="text-xl font-bold mb-4 text-text-light">Define the Base Time</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
                 <!-- Date Input -->
@@ -95,7 +96,8 @@
 
         <!-- Output Display Grid -->
         <div id="timezone-results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <h2 class="lg:col-span-3 text-2xl font-bold mb-4 text-text-light">2. Converted Times</h2>
+            <!-- "2." removed in the Javascript function below -->
+            <h2 class="lg:col-span-3 text-2xl font-bold mb-4 text-text-light">Converted Times</h2>
             <!-- Timezone cards inserted here -->
         </div>
 
@@ -109,6 +111,7 @@
             { name: "Paris, France", id: "Europe/Paris", abbr: "CET/CEST" },
             { name: "Dubai, UAE", id: "Asia/Dubai", abbr: "GST" },
             { name: "New Delhi, India", id: "Asia/Kolkata", abbr: "IST" },
+            { name: "Beijing, China", id: "Asia/Shanghai", abbr: "CST" },
             { name: "Tokyo, Japan", id: "Asia/Tokyo", abbr: "JST" },
             { name: "Sydney, Australia", id: "Australia/Sydney", abbr: "AEST/AEDT" },
         ];
@@ -161,7 +164,8 @@
         }
 
         function initializeResultCards() {
-            timezoneResultsDiv.innerHTML = '<h2 class="lg:col-span-3 text-2xl font-bold mb-4 text-text-light">2. Converted Times</h2>';
+            // Removed "2." from the HTML string below
+            timezoneResultsDiv.innerHTML = '<h2 class="lg:col-span-3 text-2xl font-bold mb-4 text-text-light">Converted Times</h2>';
             TARGET_TIMEZONES.forEach(tz => {
                 const card = document.createElement('div');
                 card.id = `result-${tz.id.replace('/', '-')}`;
@@ -179,16 +183,13 @@
         /**
          * Helper Function: 
          * Calculates the absolute Date object for a given string date/time in a specific timezone.
-         * This essentially reverses the timezone offset to find the true moment in time.
          */
         function getAbsoluteDate(dateStr, timeStr, timeZone) {
             const [y, m, d] = dateStr.split('-').map(Number);
             const [h, min] = timeStr.split(':').map(Number);
             
-            // 1. Start by assuming the inputs are UTC to get a stable reference point
             let date = new Date(Date.UTC(y, m - 1, d, h, min));
             
-            // 2. Create a formatter for the target timezone
             const options = { 
                 timeZone: timeZone,
                 year: 'numeric', month: 'numeric', day: 'numeric',
@@ -197,29 +198,22 @@
             };
             const formatter = new Intl.DateTimeFormat('en-US', options);
             
-            // 3. Shift the date until it matches the target time in the target timezone.
-            // We iterate a few times to converge on the correct offset (handling DST edges).
             for (let i = 0; i < 3; i++) {
                  const parts = formatter.formatToParts(date);
                  const fY = parseInt(parts.find(p => p.type === 'year').value);
                  const fM = parseInt(parts.find(p => p.type === 'month').value);
                  const fD = parseInt(parts.find(p => p.type === 'day').value);
-                 // Handle "24" hour case if browser weirdness, though en-US hour12:false usually is 0-23
                  let fH = parseInt(parts.find(p => p.type === 'hour').value);
                  if (fH === 24) fH = 0;
                  const fMin = parseInt(parts.find(p => p.type === 'minute').value);
                  
-                 // What time is it 'really' if we treat the formatted output as UTC?
                  const formattedInUTC = new Date(Date.UTC(fY, fM - 1, fD, fH, fMin));
                  const targetTime = new Date(Date.UTC(y, m - 1, d, h, min));
                  
-                 // Calculate the error (offset difference)
                  const error = formattedInUTC.getTime() - targetTime.getTime();
                  
-                 // If no error, we found the correct instant!
                  if (error === 0) break;
                  
-                 // Adjust the date by subtracting the error to align it
                  date = new Date(date.getTime() - error);
             }
             
@@ -233,7 +227,6 @@
             
             if (!dateStr || !timeStr) return;
 
-            // Use the new helper to treat the input as originating from the 'baseZone'
             const localDate = getAbsoluteDate(dateStr, timeStr, baseZone);
 
             if (isNaN(localDate.getTime())) return;
